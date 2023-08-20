@@ -98,6 +98,24 @@ const resendEmail = async (email) => {
   }
 };
 
+const getUser = async (user) => {
+  try {
+    const user = await axios.get("/seller/profile", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+      httpsAgent: agent
+    });
+    console.log(user.data.seller);
+    return user.data.seller;
+  }
+  catch (error) {
+    console.log(error);
+    return false;
+  }
+}
+
 export default {
   doLogIn,
   isLoggedIn,
@@ -105,5 +123,6 @@ export default {
   signUp,
   isEmailVerified,
   resendEmail,
+  getUser
 };
 

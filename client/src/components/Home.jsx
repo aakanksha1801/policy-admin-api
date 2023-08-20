@@ -14,11 +14,25 @@ import AccountCircle from "@material-ui/icons/AccountCircle";
 import MailIcon from "@material-ui/icons/Mail";
 import NotificationsIcon from "@material-ui/icons/Notifications";
 import MoreIcon from "@material-ui/icons/MoreVert";
-import authService from "./../service/authService";
+import Service from "../service/service";
 import { Card, CardContent, CardMedia } from "@material-ui/core";
-import {Button} from "@material-ui/core";
-import { tr } from "date-fns/locale";
+import Profile from "./Profile";
+
+import { Button } from "@material-ui/core";
 const useStyles = makeStyles((theme) => ({
+  header: {
+    backgroundColor: "#f50057",
+    padding: theme.spacing(2),
+    textAlign: "center",
+    color: "#fff",
+    marginBottom: theme.spacing(2),
+  },
+
+  card: {
+    margin: theme.spacing(2),
+    padding: theme.spacing(2),
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+  },
   grow: {
     flexGrow: 1
   },
@@ -99,7 +113,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Home(props) {
-  if (!authService.isLoggedIn()) {
+  if (!Service.isLoggedIn()) {
     props.history.push("/login");
   }
 
@@ -107,7 +121,11 @@ export default function Home(props) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
   const [emailVerfied, setEmailVerified] = React.useState(false);
-
+  const [account, setAccount] = React.useState({
+    name: "",
+    phone: "",
+    email: ""
+  });
   const isMenuOpen = Boolean(anchorEl);
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
 
@@ -129,7 +147,7 @@ export default function Home(props) {
   };
 
   React.useEffect(() => {
-    authService
+    Service
       .isEmailVerified()
       .then((res) => {
         setEmailVerified(true);
@@ -139,7 +157,15 @@ export default function Home(props) {
       });
   }, []);
 
-
+  React.useEffect(async () => {
+    const profile = await Service.getUser();
+    setAccount({
+      name: profile.sellerName,
+      phone: profile.sellerPhone,
+      email: profile.sellerEmail
+    });
+    console.log(profile);
+  }, []);
 
   const menuId = "primary-search-account-menu";
   const renderMenu = (
@@ -154,7 +180,7 @@ export default function Home(props) {
     >
       <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
       <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-      <MenuItem onClick={() => authService.logOut(props)}>Log Out</MenuItem>
+      <MenuItem onClick={() => Service.logOut(props)}>Log Out</MenuItem>
     </Menu>
   );
 
@@ -270,8 +296,7 @@ export default function Home(props) {
         {renderMobileMenu}
         {renderMenu}
       </div>
-      {/* make a card to verify email if not verified*/}
-      {!emailVerfied && (
+      {emailVerfied &&
         <Card className={classes.root}>
           <CardContent>
             <Typography variant="h5" component="h2">
@@ -285,7 +310,7 @@ export default function Home(props) {
               variant="contained"
               color="primary"
               onClick={() => {
-                authService
+                Service
                   .resendEmail()
                   .then((res) => {
                     console.log(res);
@@ -299,8 +324,11 @@ export default function Home(props) {
             </Button>
           </CardContent>
         </Card>
-      )}
+      }
 
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Profile account={account} />
+      </div>
     </>
   );
 }
