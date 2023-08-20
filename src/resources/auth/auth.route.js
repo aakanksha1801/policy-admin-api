@@ -85,7 +85,7 @@ function defineSellerRoutes(expressApp) {
                 //savee token in cookie
                 response.cookie("token", token, { expiresIn: 360000 });
                 //send email
-                await sendEmail(sellerEmail, sellerId);
+                await sendEmail(sellerEmail, sellerId, "verification");
                 await seller.save();
                 response.status(httpStatus.CREATED).send({
                     token,
@@ -119,7 +119,7 @@ function defineSellerRoutes(expressApp) {
                 });
             }
             //send email
-            await sendEmail(sellerEmail, seller.sellerId);
+            await sendEmail(sellerEmail, seller.sellerId, "verification");
             response.status(httpStatus.OK).send({
                 message: "Email sent successfully.",
             });
@@ -195,7 +195,7 @@ function defineSellerRoutes(expressApp) {
                             expiresIn: 360000,
                         });
                         //savee token in cookie
-                response.cookie("token", token, { expiresIn: 360000 });
+                        response.cookie("token", token, { expiresIn: 360000 });
                         response.status(httpStatus.OK).send({
                             token,
                             seller: sellerResponse({
@@ -232,8 +232,8 @@ function defineSellerRoutes(expressApp) {
     });
 
     //get seller profile
-    sellerRouter.get("/profile", checkAuth , async (request, response) => {
-        try { 
+    sellerRouter.get("/profile", checkAuth, async (request, response) => {
+        try {
             const seller = await Seller.findOne({
                 sellerId: request.seller.sellerId,
             });
@@ -255,7 +255,7 @@ function defineSellerRoutes(expressApp) {
     });
 
     //check email verification
-    sellerRouter.get("/check-email-verification", checkAuth , async (request, response) => {
+    sellerRouter.get("/check-email-verification", checkAuth, async (request, response) => {
         try {
             const seller = await Seller.findOne({
                 sellerId: request.seller.sellerId,
@@ -284,7 +284,7 @@ function defineSellerRoutes(expressApp) {
     });
 
     //update seller profile
-    sellerRouter.put("/profile", checkAuth , async (request, response) => {
+    sellerRouter.put("/profile", checkAuth, async (request, response) => {
         try {
             const { sellerName, sellerPhone } = request.body.seller;
             const seller = await Seller.findOne({
@@ -309,8 +309,90 @@ function defineSellerRoutes(expressApp) {
         }
     });
 
+    //update seller password
+    sellerRouter.put("/reset-password", checkAuth, async (request, response) => {
+        try {
+            const { sellerPassword, newSellerPassword } = request.seller;
+            const seller = await Seller.findOne({
+                sellerId: request.seller.sellerId,
+            });
+            if (!seller) {
+                response.status(httpStatus.BAD_REQUEST).send({
+                    message: "Seller does not exist.",
+                });
+            }
+            // Check if password is correct
+            const isMatch = await bcrypt.compare(
+                sellerPassword,
+                seller.sellerPassword
+            );
+            if (!isMatch) {
+                response.status(httpStatus.BAD_REQUEST).send({
+                    message: "Incorrect password",
+                });
+            }
 
+            seller.sellerPassword = newSellerPassword;
+            await seller.save();
+            response.status(httpStatus.OK).send({
+                message: "Password updated successfully",
+            });
+        } catch (error) {
+            logger.error(error);
+            response.status(httpStatus.INTERNAL_SERVER_ERROR).send({
+                message: "Error while updating seller password",
+            });
+        }
+    });
 
+    //forgot password
+    sellerRouter.post("/forgot-password", async (request, response) => {
+        try {
+            const { sellerEmail } = request.body;
+            const seller = await Seller.findOne({ sellerEmail });
+            if (!seller) {
+                response.status(httpStatus.BAD_REQUEST).send({
+                    message: "Seller does not exist.",
+                });
+            }
+            await sendEmail(sellerEmail, seller.sellerId, "resetPassword");
+            response.status(httpStatus.OK).send({
+                message: `Email has been sent to ${sellerEmail}. Follow the instructions to reset your password.`,
+            });
+        } catch (error) {
+            logger.error(error);
+            response.status(httpStatus.INTERNAL_SERVER_ERROR).send({
+                message: "Error while sending email",
+            });
+        }
+    });
+
+    //update profile 
+    sellerRouter.put("/update-profile", checkAuth, async (request, response) => {
+        try {
+            const { sellerName, sellerPhone, sellerEmail } = request.body.seller;
+            const seller = await Seller.findOne({
+                sellerId: request.seller.sellerId,
+            });
+            if (!seller) {
+                response.status(httpStatus.BAD_REQUEST).send({
+                    message: "Seller does not exist.",
+                });
+            }
+            seller.sellerName = sellerName;
+            seller.sellerPhone = sellerPhone;
+            seller.sellerEmail = sellerEmail;
+            await seller.save();
+            response.status(httpStatus.OK).send({
+                seller: sellerResponse(seller),
+            });
+        } catch (error) {
+            logger.error(error);
+            response.status(httpStatus.INTERNAL_SERVER_ERROR).send({
+                message: "Error while updating seller profile",
+            });
+        }
+    });
     expressApp.use("/seller", sellerRouter);
 };
 

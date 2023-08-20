@@ -1,0 +1,231 @@
+openapi: 3.0.0
+info:
+  title: Seller API
+  version: 1.0.0
+paths:
+  /seller/register:
+    post:
+      summary: Register a new seller
+      requestBoday:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seller:
+                  type: object
+                  properties:
+                    sellerName:
+                      type: string
+                    sellerPassword:
+                      type: string
+      responses:
+        '201':
+          description: Registration successful. Verification email sent.
+        '400':
+          description: Invalid sellerName or sellerPassword.
+
+  /seller/send-verification-email:
+    post:
+      summary: Send verification email to seller
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Verification email sent successfully.
+        '400':
+          description: Seller account not found.
+
+  /seller/verify/{verificationToken}:
+    get:
+      summary: Verify seller account using verification token
+      parameters:
+        - name: verificationToken
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Seller account verified successfully.
+        '400':
+          description: Invalid verification token.
+        '500':
+          description: Internal server error.
+
+  /seller/login:
+    post:
+      summary: Authenticate seller and get access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seller:
+                  type: object
+                  properties:
+                    sellerEmail:
+                      type: string
+                    sellerPassword:
+                      type: string
+      responses:
+        '200':
+          description: Successful login.
+        '400':
+          description: Invalid credentials.
+        '404':
+          description: Seller not found.
+
+  /seller/logout:
+    post:
+      summary: Logout seller
+      responses:
+        '200':
+          description: Logged out successfully.
+        '500':
+          description: Internal server error.
+
+  /seller/profile:
+    get:
+      summary: Get authenticated seller's profile
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Successful retrieval.
+        '400':
+          description: Seller not found.
+        '401':
+          description: Unauthorized.
+        '500':
+          description: Internal server error.
+
+  /seller/check-email-verification:
+    get:
+      summary: Check if seller's email is verified
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Email verified.
+        '401':
+          description: Email not verified.
+        '400':
+          description: Seller not found.
+        '500':
+          description: Internal server error.
+
+/seller/profile:
+    put:
+      summary: Update authenticated seller's profile
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seller:
+                  type: object
+                  properties:
+                    sellerName:
+                      type: string
+                    sellerPhone:
+                      type: string
+      responses:
+        '200':
+          description: Profile updated successfully.
+        '400':
+          description: Seller not found or invalid input.
+        '401':
+          description: Unauthorized.
+        '500':
+          description: Internal server error.
+  /seller/reset-password:
+    put:
+      summary: Update authenticated seller's password
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sellerPassword:
+                  type: string
+                newSellerPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password updated successfully.
+        '400':
+          description: Invalid input or password mismatch.
+        '401':
+          description: Unauthorized.
+        '500':
+          description: Internal server error.
+
+  /seller/forgot-password:
+    post:
+      summary: Send password reset email to seller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sellerEmail:
+                  type: string
+      responses:
+        '200':
+          description: Email sent for password reset.
+        '400':
+          description: Seller not found.
+        '500':
+          description: Internal server error.
+
+  /seller/update-profile:
+    put:
+      summary: Update authenticated seller's profile including email
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seller:
+                  type: object
+                  properties:
+                    sellerName:
+                      type: string
+                    sellerPhone:
+                      type: string
+                    sellerEmail:
+                      type: string
+      responses:
+        '200':
+          description: Profile updated successfully.
+        '400':
+          description: Seller not found or invalid input.
+        '401':
+          description: Unauthorized.
+        '500':
+          description: Internal server error.
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
